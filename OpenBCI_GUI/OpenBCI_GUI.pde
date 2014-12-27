@@ -131,7 +131,7 @@ String fileName = "N/A";
 
 //serial port open or closed(?)
 boolean portIsOpen = false;
-Serial serial_openBCI = null;
+//Serial serial_openBCI = null;
 
 //for screen resizing
 boolean screenHasBeenResized = false;
@@ -356,61 +356,61 @@ void syncWithHardware(){
   switch (hardwareSyncStep) {
     // case 1:
     //   println("[0] Sending 'v' to OpenBCI to reset hardware in case of 32bit board...");
-    //   serial_openBCI.write('v');
+    //   openBCI.serial_openBCI.write('v');
     //   readyToSend = false; //wait for $$$ to iterate... applies to commands expecting a response
     case 1: //send # of channels (8 or 16) ... (regular or daisy setup)
       println("[1] Sending channel count (" + nchan + ") to OpenBCI...");
       if(nchan == 8){
-        serial_openBCI.write('c');
+        openBCI.serial_openBCI.write('c');
       }
       if(nchan == 16){
-        serial_openBCI.write('C');
+        openBCI.serial_openBCI.write('C');
         readyToSend = false;
       }
       break;
     case 2: //reset hardware to default registers 
       println("[2] Reseting OpenBCI registers to default... writing \'d\'...");
-      serial_openBCI.write("d"); 
+      openBCI.serial_openBCI.write("d"); 
       break;
     case 3: //ask for series of channel setting ASCII values to sync with channel setting interface in GUI
       println("[3] Retrieving OpenBCI's channel settings to sync with GUI... writing \'D\'... waiting for $$$...");
       readyToSend = false; //wait for $$$ to iterate... applies to commands expecting a response
-      serial_openBCI.write("D"); 
+      openBCI.serial_openBCI.write("D"); 
       break;
     case 4: //check existing registers
       println("[4] Retrieving OpenBCI's full register map for verification... writing \'?\'... waiting for $$$...");
       readyToSend = false; //wait for $$$ to iterate... applies to commands expecting a response
-      serial_openBCI.write("?"); 
+      openBCI.serial_openBCI.write("?"); 
       break;
     case 5:
-      // serial_openBCI.write("j"); // send OpenBCI's 'j' commaned to make sure any already open SD file is closed before opening another one...
+      // openBCI.serial_openBCI.write("j"); // send OpenBCI's 'j' commaned to make sure any already open SD file is closed before opening another one...
       switch (sdSetting){
         case 0: //"Do not write to SD"
           //do nothing
           break;
         case 1: //"5 min max"
-          serial_openBCI.write("A");
+          openBCI.serial_openBCI.write("A");
           break;
         case 2: //"5 min max"
-          serial_openBCI.write("S");
+          openBCI.serial_openBCI.write("S");
           break;
         case 3: //"5 min max"
-          serial_openBCI.write("F");
+          openBCI.serial_openBCI.write("F");
           break;
         case 4: //"5 min max"
-          serial_openBCI.write("G");
+          openBCI.serial_openBCI.write("G");
           break;
         case 5: //"5 min max"
-          serial_openBCI.write("H");
+          openBCI.serial_openBCI.write("H");
           break;
         case 6: //"5 min max"
-          serial_openBCI.write("J");
+          openBCI.serial_openBCI.write("J");
           break;
         case 7: //"5 min max"
-          serial_openBCI.write("K");
+          openBCI.serial_openBCI.write("K");
           break;
         case 8: //"5 min max"
-          serial_openBCI.write("L");
+          openBCI.serial_openBCI.write("L");
           break;
       }
       println("[5] Writing selected SD setting (" + sdSettingString + ") to OpenBCI...");
@@ -446,9 +446,9 @@ void haltSystem(){
 
   if ((eegDataSource == DATASOURCE_NORMAL) || (eegDataSource == DATASOURCE_NORMAL_W_AUX)){
     closeLogFile();  //close log file
-    if (serial_openBCI != null){
+    if (openBCI.serial_openBCI != null){
       println("Closing any open SD file. Writing 'j' to OpenBCI.");
-      serial_openBCI.write("j"); // tell the SD file to close if one is open...
+      openBCI.serial_openBCI.write("j"); // tell the SD file to close if one is open...
       delay(100); //make sure 'j' gets sent to the board
       readyToSend = false;
       openBCI.closeSerialPort();   //disconnect from serial port
@@ -489,14 +489,17 @@ void draw() {
 void systemUpdate(){ // for updating data values and variables
 
   //has it been 3000 milliseconds since we initiated the serial port? We want to make sure we wait for the OpenBCI board to finish its setup()
-  if(millis() - openBCI.prevState_millis > openBCI.COM_INIT_MSEC && openBCI.prevState_millis != 0 && openBCI.state == openBCI.STATE_COMINIT){
+  if( (millis() - openBCI.prevState_millis > openBCI.COM_INIT_MSEC) && 
+      (openBCI.prevState_millis != 0) && 
+      (openBCI.state == openBCI.STATE_COMINIT) ) {
+        
     openBCI.state = openBCI.STATE_SYNCWITHHARDWARE;
     timeOfLastCommand = millis();
-    serial_openBCI.clear();
+    openBCI.serial_openBCI.clear();
     openBCI.defaultChannelSettings = ""; //clear channel setting string to be reset upon a new Init System
     openBCI.daisyOrNot = ""; //clear daisyOrNot string to be reset upon a new Init System
     println("[0] Sending 'v' to OpenBCI to reset hardware in case of 32bit board...");
-    serial_openBCI.write('v');
+    openBCI.serial_openBCI.write('v');
   }
 
   //if we are in SYNC WITH HARDWARE state ... trigger a command
@@ -830,7 +833,9 @@ void serialEvent(Serial port) {
   //check to see which serial port it is
   // if (port == openBCI.serial_openBCI) {
   // println("SE " + millis());
-  if (port == serial_openBCI) {
+  
+  if (port == openBCI.serial_openBCI) {
+  //if openBCI.isOpenBCISerial(port) {
     // boolean echoBytes = !openBCI.isStateNormal(); 
     boolean echoBytes;
 
@@ -842,6 +847,7 @@ void serialEvent(Serial port) {
 
     // openBCI.read(true);
     openBCI.read(echoBytes);
+    //openBCI.read(echoBytes,port);
     openBCI_byteCount++;
     if (openBCI.isNewDataPacketAvailable) {
       //copy packet into buffer of data packets
@@ -1086,9 +1092,9 @@ void mouseReleased() {
 }
 
 void printRegisters(){
-  if (serial_openBCI != null) {
+  if (openBCI.serial_openBCI != null) {
     println("Writing ? to OpenBCI...");
-    serial_openBCI.write('?');
+    openBCI.serial_openBCI.write('?');
   }
   // printingRegisters = true;
 }
@@ -1235,7 +1241,7 @@ boolean isChannelActive(int Ichan) {
 void activateChannel(int Ichan) {
   println("OpenBCI_GUI: activating channel " + (Ichan+1));
   if(eegDataSource == DATASOURCE_NORMAL || eegDataSource == DATASOURCE_NORMAL_W_AUX){
-    if (serial_openBCI != null){
+    if (openBCI.serial_openBCI != null){
       verbosePrint("**");
       openBCI.changeChannelState(Ichan, true); //activate
     }
@@ -1248,7 +1254,7 @@ void activateChannel(int Ichan) {
 void deactivateChannel(int Ichan) {
   println("OpenBCI_GUI: deactivating channel " + (Ichan+1));
   if(eegDataSource == DATASOURCE_NORMAL || eegDataSource == DATASOURCE_NORMAL_W_AUX){
-    if (serial_openBCI != null) {
+    if (openBCI.serial_openBCI != null) {
       verbosePrint("**");
       openBCI.changeChannelState(Ichan, false); //de-activate
     }

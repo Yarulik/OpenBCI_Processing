@@ -64,6 +64,8 @@ class OpenBCI_ADS1299 {
   //int measured_packet_length_ind = 0;
   //int known_packet_length_bytes = 0;
   
+  public Serial serial_openBCI = null;
+  
   final static byte BYTE_START = (byte)0xA0;
   final static byte BYTE_END = (byte)0xC0;
   
@@ -212,35 +214,6 @@ class OpenBCI_ADS1299 {
     return 0;
   }
   
-  //start the data transfer using the current mode
-  // int startDataTransfer() {
-  //   println("OpenBCI_ADS1299: startDataTransfer: using current dataMode..." + dataMode);
-  //   return startDataTransfer(dataMode);
-  // }
-  
-  // //start data trasnfer using the given mode
-  // int startDataTransfer(int mode) {
-  //   dataMode = mode;
-  //   if (state == STATE_COMINIT) {
-  //     println("OpenBCI_ADS1299: startDataTransfer: cannot start transfer...waiting for comms...");
-  //     return -1;
-  //   }
-  //   // stopDataTransfer();
-  //   // println("OpenBCI_ADS1299: startDataTransfer: received command for mode = " + mode);
-  //   // switch (mode) {
-  //   //   case DATAMODE_BIN:
-  //   //     serial_openBCI.write(command_startBinary);// + "\n");
-  //   //     // serial_openBCI.write(command_startBinary);
-  //   //     println("OpenBCI_ADS1299: startDataTransfer: starting binary transfer");
-  //   //     break;
-  //   //   case DATAMODE_BIN_WAUX:
-  //   //     serial_openBCI.write(command_startBinary_wAux);// + "\n");
-  //   //     println("OpenBCI_ADS1299: startDataTransfer: starting binary transfer (with Aux)");
-  //   //     break;
-  //   // }
-
-  //   return 0;
-  // }
 
   void startDataTransfer(){
     if (serial_openBCI != null) {
@@ -618,25 +591,4 @@ class OpenBCI_ADS1299 {
 //    }
 //  }
 };  
-  
-//  int measurePacketLength() {
-//    
-//    //assume curBuffIndex has already been incremented to the next open spot
-//    int startInd = curBuffIndex-1;
-//    int endInd = curBuffIndex-1;
-//
-//    //roll backwards to find the start of the packet
-//    while ((startInd >= 0) && (serialBuff[startInd] != BYTE_START)) {
-//      startInd--;
-//    }
-//    if (startInd < 0) {
-//      //didn't find the start byte..so ignore this data packet
-//      return 0;
-//    } else if ((endInd - startInd + 1) < 3) {
-//      //data packet isn't long enough to hold any data...so ignore this data packet
-//      return 0;
-//    } else {
-//      //int n_bytes = int(serialBuff[startInd + 1]); //this is the number of bytes in the payload
-//      //println("OpenBCI_ADS1299: measurePacketLength = " + (endInd-startInd+1));
-//      return endInd-startInd+1;
-//    }
+
