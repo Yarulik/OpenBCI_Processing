@@ -41,7 +41,8 @@ final int DATASOURCE_NORMAL_W_AUX = 0; // new default, data from serial with Acc
 public int eegDataSource = -1; //default to none of the options
 
 //Serial communications constants
-OpenBCI_ADS1299 openBCI = new OpenBCI_ADS1299(); //dummy creation to get access to constants, create real one later
+//OpenBCI_ADS1299 openBCI = new OpenBCI_ADS1299(); //dummy creation to get access to constants, create real one later
+OpenBCI_multi openBCI = new OpenBCI_multi(); //dummy creation to get access to constants, create real one later
 String openBCI_portName = "N/A";  //starts as N/A but is selected from control panel to match your OpenBCI USB Dongle's serial/COM
 
 int openBCI_baud = 115200; //baud rate from the Arduino
@@ -76,7 +77,7 @@ String sdSettingString = "Do not write to SD";
 //int nchan = 12; //normally, nchan = OpenBCI_Nchannels.  Choose a smaller number to show fewer on the GUI
 // int nchan = OpenBCI_Nchannels; //normally, nchan = OpenBCI_Nchannels.  Choose a smaller number to show fewer on the GUI
 
-int nchan = 8; //normally, nchan = OpenBCI_Nchannels.  Choose a smaller number to show fewer on the GUI
+int nchan = 16; //normally, nchan = OpenBCI_Nchannels.  Choose a smaller number to show fewer on the GUI
 // int nchan_active_at_startup = nchan;  //how many channels to be LIVE at startup
 int n_aux_ifEnabled = 3;  // this is the accelerometer data CHIP 2014-11-03
 
@@ -302,7 +303,10 @@ void initSystem(){
       int nEEDataValuesPerPacket = nchan;
       boolean useAux = false;
       if (eegDataSource == DATASOURCE_NORMAL_W_AUX) useAux = true;  //switch this back to true CHIP 2014-11-04
-      openBCI = new OpenBCI_ADS1299(this, openBCI_portName, openBCI_baud, nEEDataValuesPerPacket, useAux, n_aux_ifEnabled); //this also starts the data transfer after XX seconds
+      //openBCI = new OpenBCI_multi(this, openBCI_portName, openBCI_baud, nEEDataValuesPerPacket, useAux, n_aux_ifEnabled); //this also starts the data transfer after XX seconds
+      String[] portNames = new String[1]; portNames[0] = openBCI_portName;
+      openBCI = new OpenBCI_multi(this, portNames, openBCI_baud, nEEDataValuesPerPacket, useAux, n_aux_ifEnabled); //this also starts the data transfer after XX seconds
+      
       break;
     case DATASOURCE_SYNTHETIC:
       //do nothing
