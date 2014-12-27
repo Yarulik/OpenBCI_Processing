@@ -74,14 +74,14 @@ class OpenBCI_multi {
   
     //Create data structure to hold all data values
     bigDataPacket = new DataPacket_ADS1299(nBoards*nChanPerBoard,nBoards*nAuxValuesPerBoard);
-    
-    //create Master
-    openBCI_slaves[Islave] = new OpenBCI_ADS1299(applet, comPorts[Islave+1], baud, nChanPerBoard, useAux, nAuxValuesPerBoard); 
-        
-    //create the slaves
+       
+    //create the individual boards
     OpenBCI_ADS1299[] openBCI_boards = new OpenBCI_ADS1299[nBoards];
     for (int Iboard = 0; Iboard < nBoards; Iboard++) {
-      openBCI_boards[Iboard] = new OpenBCI_ADS1299(applet, comPorts[Iboard], baud, nChanPerBoard, useAux, nAuxValuesPerBoard);
+      //openBCI_boards[Iboard] = new OpenBCI_ADS1299(applet, comPorts[Iboard], baud, nChanPerBoard, useAux, nAuxValuesPerBoard);  this is what we should do
+      
+      int nAuxPerDataPacket = 3;  //this is what we're stuck doing right now
+      openBCI_boards[Iboard] = new OpenBCI_ADS1299(applet, comPorts[Iboard], baud, nChanPerBoard, useAux,nAuxPerDataPacket);  //this is what we're stuck doing right now
     }
   } // end constructor
   
@@ -104,12 +104,13 @@ class OpenBCI_multi {
     
     //copy the new data into the large data packet
     if (flag_newData) {
-        //copy the data!
+        //copy the data for an individual board into the bigDataPacket
+        int indOffset_values = nChanPerBoard*whichBoard;
+        int indOffset_auxValues = nAuxPerBoard*whichBoard;
+        openBCI_boards[whichBoard].copyValuesAndAuxTo(bigDataPacket,indOffset_values,indOffset_auxValues);
         
-        
-        //set the isNewData flag
+        //set the isNewData flag based only on the master OpenBCI board (ie, the first OpenBCI board)
         if (Iboard == 0) isNewDataPacketAvailable = true; //only the master drives whether we say new data is available
-
     }
     
     return returnVal;
