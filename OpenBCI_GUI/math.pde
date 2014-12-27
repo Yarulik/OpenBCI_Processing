@@ -146,6 +146,6 @@ void rereferenceTheMontage(float[][] data) {
     //remove the mean signal from all channels
     for (int Ichan=0;Ichan<n_chan;Ichan++) data[Ichan][Ipoint] -= mean;
   }
-}
+};
   
 

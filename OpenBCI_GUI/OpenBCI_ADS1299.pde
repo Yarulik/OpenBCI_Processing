@@ -46,12 +46,84 @@ final String[] command_activate_channel_daisy = {"Q", "W", "E", "R", "T", "Y", "
 
 // ArrayList defaultChannelSettings;
 
+
+//Class: OpenBCI_multi
+//Created: Chip Audette 2014-12-26
+//Purpose: Here is a class to wrap up multiple OpenBCI boards into one class
+//   so that you can use multiple OpenBCI boards in parallel to increase the
+//   overall EEG channel count.  This class holds one of the openBCI boards
+//   to be priveledged over the others...call it the "master".  Any other
+//   boards are secondary to the primary board.  Whenever new data arrives from
+//   the primary board, it drives everything else in the GUI...whether or not
+//   new data has arrived from the secondary boards.
+class OpenBCI_multi extends OpenBCI_ADS1299 {
+  //data members
+  public OpenBCI_ADS1299[] openBCI_slaves;
+  DataPacket_ADS1299 dataPacket;
+  int nChanPerBoard;
+  int nAuxValuesPerBoard
+  
+  //constructors
+  OpenBCI_multi() { super(); };
+  OpenBCI_multi(PApplet applet, String[] comPorts, int baud, int _nChanPerBoard, boolean useAux, int _nAuxValuesPerBoard) {
+    int nBoards = comPorts.length;
+    nChanPerBoard = _nChanPerBoard;
+    nAuxValuesPerBoard = _nAuxValuesPerBoard;
+    
+    //Create data structure to hold all data values
+    dataPacket = new DataPacket_ADS1299(nBoards*nChanPerBoard,nBoards*nAuxValuesPerBoard);
+    
+    //call parent to create the master openBCI
+    super(applet, comPorts[0], baud, nChanPerBoard, useAux, nAuxValuesPerBoard);
+    
+    //now create the slaves
+    if ((nBoards-1) > 0) {
+      OpenBCI_ADS1299[] openBCI_slaves = new OpenBCI_ADS1299[nBoards - 1];
+      for (int Islave = 0+1; Islave < nBoards; Islave++) {
+        openBCI_slaves[Islave] = new OpenBCI_ADS1299(applet, comPorts[Islave+1], baud, nChanPerBoard, useAux, nAuxValuesPerBoard);
+      }
+    }
+  }
+  
+  // methods
+  public int read(Serial port) { return read(false,port); }
+  public int read(boolean echoChar, Serial port) {
+    int returnVal = 0;
+    boolean flag_newData = 0;
+    int whichBoard=0;
+    
+    //find the openBCI that matches the given serial port
+    
+    //check the master openBCI board
+    if (port == super.serial_openBCI) {
+      whichBoard = 0;
+      returnVal = super.read(echoChar,port);
+      flag_newData = true;
+      
+    } else {
+      for (int Islave = 0; Islave < openBCI_slaves.length; Islave++) {
+        if (port == openBCI_slaves[Islave].serial_openBCI) {
+          whichBoard = Islave+1;
+          returnVal = openBCI_slaves[Islave].read(echoChar,port);
+          flat_newData = true;
+          break;
+        }
+      }
+    }
+    
+    //copy the new data into the large data packet
+    if (flag_newData) {
+        //copy the data!
+    }
+    
+    return returnVal;
+  }
+};
+
 class OpenBCI_ADS1299 {
   
-  //final static int DATAMODE_TXT = 0;
   final static int DATAMODE_BIN = 2;
   final static int DATAMODE_BIN_WAUX = 1;  //switched to this value so that receiving Accel data is now the default
-  //final static int DATAMODE_BIN_4CHAN = 4;
   
   final static int STATE_NOCOM = 0;
   final static int STATE_COMINIT = 1;
