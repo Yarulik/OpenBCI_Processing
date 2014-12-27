@@ -228,8 +228,11 @@ class OpenBCI_ADS1299 {
   }
   
   //read from the serial port
-  int read() {  return read(false); }
-  int read(boolean echoChar) {
+  //int read() {  return read(false); }
+  int read(Serial port) { return read(false,port); }
+  int read(boolean echoChar, Serial port) {
+    //for now, assume that the given port matches the known serial_openBCI port
+    
     // print("State: " + state);
     //get the byte
     byte inByte = byte(serial_openBCI.read());
@@ -549,6 +552,14 @@ class OpenBCI_ADS1299 {
       isNewDataPacketAvailable = false;
       dataPacket.copyTo(target);
       return 0;
+    }
+  }
+  
+  public boolean isOpenBCISerialPort(Serial port) {
+    if (port == serial_openBCI) {
+      return true;
+    } else {
+      return false;
     }
   }
 };  

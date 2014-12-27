@@ -834,20 +834,19 @@ void serialEvent(Serial port) {
   // if (port == openBCI.serial_openBCI) {
   // println("SE " + millis());
   
-  if (port == openBCI.serial_openBCI) {
-  //if openBCI.isOpenBCISerial(port) {
+  if (openBCI.isOpenBCISerialPort(port)) {
     // boolean echoBytes = !openBCI.isStateNormal(); 
     boolean echoBytes;
 
-    if(openBCI.isStateNormal() != true){  // || printingRegisters == true){
+    if(openBCI.isStateNormal() != true) {  // || printingRegisters == true){
       echoBytes = true;
-    } else{
+    } else {
       echoBytes = false;
     }
 
     // openBCI.read(true);
-    openBCI.read(echoBytes);
-    //openBCI.read(echoBytes,port);
+    //openBCI.read(echoBytes);
+    openBCI.read(echoBytes,port);
     openBCI_byteCount++;
     if (openBCI.isNewDataPacketAvailable) {
       //copy packet into buffer of data packets
@@ -864,8 +863,7 @@ void serialEvent(Serial port) {
 
       fileoutput.writeRawData_dataPacket(dataPacketBuff[curDataPacketInd],openBCI.scale_fac_uVolts_per_count,openBCI.scale_fac_accel_G_per_count);
     }
-  } 
-  else {
+  } else {
     inByte = port.read();
   }
 }
