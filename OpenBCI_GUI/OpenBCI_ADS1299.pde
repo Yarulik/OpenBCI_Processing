@@ -138,12 +138,13 @@ class OpenBCI_ADS1299 {
   final static int STATE_NORMAL = 3;
   final static int STATE_STOPPED = 4;
   final static int COM_INIT_MSEC = 3000; //you may need to vary this for your computer or your Arduino
-  
+
   //int[] measured_packet_length = {0,0,0,0,0};
   //int measured_packet_length_ind = 0;
   //int known_packet_length_bytes = 0;
   
   public Serial serial_openBCI = null;
+
   
   final static byte BYTE_START = (byte)0xA0;
   final static byte BYTE_END = (byte)0xC0;
@@ -602,6 +603,7 @@ class OpenBCI_ADS1299 {
     return newInt;
   }
   
+
   private int copyRawDataToFullData() {
     //Prior to the 16-chan OpenBCI, we did NOT have rawReceivedDataPacket along with dataPacket...we just had dataPacket.
     //With the 16-chan OpenBCI, where the first 8 channels are sent and then the second 8 channels are sent, we introduced
@@ -619,7 +621,6 @@ class OpenBCI_ADS1299 {
       if (rawReceivedDataPacket.sampleIndex % 2 == 0) { // even data packets are from the daisy board
         offsetInd_values = rawReceivedDataPacket.values.length;  //start copying to the 8th slot
         offsetInd_aux = rawReceivedDataPacket.auxValues.length;  //start copying to the 3rd slot
-
       }
       return rawReceivedDataPacket.copyTo(dataPacket,offsetInd_values,offsetInd_aux);
     }
@@ -673,6 +674,7 @@ class OpenBCI_ADS1299 {
 //      return 0;
 //    }
 //  }
+
 
   public boolean isOpenBCISerialPort(Serial port) {
     if (port == serial_openBCI) {
