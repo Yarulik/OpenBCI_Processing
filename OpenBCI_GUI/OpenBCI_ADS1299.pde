@@ -56,68 +56,75 @@ final String[] command_activate_channel_daisy = {"Q", "W", "E", "R", "T", "Y", "
 //   boards are secondary to the primary board.  Whenever new data arrives from
 //   the primary board, it drives everything else in the GUI...whether or not
 //   new data has arrived from the secondary boards.
-class OpenBCI_multi extends OpenBCI_ADS1299 {
+class OpenBCI_multi {
   //data members
-  public OpenBCI_ADS1299[] openBCI_slaves;
-  DataPacket_ADS1299 dataPacket;
+  public OpenBCI_ADS1299[] openBCI_boards;  //the first one will be the master
+  DataPacket_ADS1299 bigDataPacket;
   int nChanPerBoard;
-  int nAuxValuesPerBoard
+  int nAuxValuesPerBoard;
+  boolean isNewDataPacketAvailable = false;
+
   
   //constructors
-  OpenBCI_multi() { super(); };
+  OpenBCI_multi() { };
   OpenBCI_multi(PApplet applet, String[] comPorts, int baud, int _nChanPerBoard, boolean useAux, int _nAuxValuesPerBoard) {
     int nBoards = comPorts.length;
     nChanPerBoard = _nChanPerBoard;
     nAuxValuesPerBoard = _nAuxValuesPerBoard;
-    
+  
     //Create data structure to hold all data values
-    dataPacket = new DataPacket_ADS1299(nBoards*nChanPerBoard,nBoards*nAuxValuesPerBoard);
+    bigDataPacket = new DataPacket_ADS1299(nBoards*nChanPerBoard,nBoards*nAuxValuesPerBoard);
     
-    //call parent to create the master openBCI
-    super(applet, comPorts[0], baud, nChanPerBoard, useAux, nAuxValuesPerBoard);
-    
-    //now create the slaves
-    if ((nBoards-1) > 0) {
-      OpenBCI_ADS1299[] openBCI_slaves = new OpenBCI_ADS1299[nBoards - 1];
-      for (int Islave = 0+1; Islave < nBoards; Islave++) {
-        openBCI_slaves[Islave] = new OpenBCI_ADS1299(applet, comPorts[Islave+1], baud, nChanPerBoard, useAux, nAuxValuesPerBoard);
-      }
+    //create Master
+    openBCI_slaves[Islave] = new OpenBCI_ADS1299(applet, comPorts[Islave+1], baud, nChanPerBoard, useAux, nAuxValuesPerBoard); 
+        
+    //create the slaves
+    OpenBCI_ADS1299[] openBCI_boards = new OpenBCI_ADS1299[nBoards];
+    for (int Iboard = 0; Iboard < nBoards; Iboard++) {
+      openBCI_boards[Iboard] = new OpenBCI_ADS1299(applet, comPorts[Iboard], baud, nChanPerBoard, useAux, nAuxValuesPerBoard);
     }
-  }
+  } // end constructor
   
   // methods
   public int read(Serial port) { return read(false,port); }
   public int read(boolean echoChar, Serial port) {
-    int returnVal = 0;
-    boolean flag_newData = 0;
+    int returnVal = -1; //nothing read yet
+    boolean flag_newData = false;
     int whichBoard=0;
     
     //find the openBCI that matches the given serial port
-    
-    //check the master openBCI board
-    if (port == super.serial_openBCI) {
-      whichBoard = 0;
-      returnVal = super.read(echoChar,port);
-      flag_newData = true;
-      
-    } else {
-      for (int Islave = 0; Islave < openBCI_slaves.length; Islave++) {
-        if (port == openBCI_slaves[Islave].serial_openBCI) {
-          whichBoard = Islave+1;
-          returnVal = openBCI_slaves[Islave].read(echoChar,port);
-          flat_newData = true;
-          break;
-        }
-      }
+    for (int Iboard = 0; Iboard < openBCI_boards.length; Iboard++) {
+      if (port == openBCI_boards[Iboard].serial_openBCI) {
+        whichBoard = Iboard;
+        returnVal = openBCI_boards[Iboard].read(echoChar,port); //read the data
+        flat_newData = true;
+        break;
+      }      
     }
     
     //copy the new data into the large data packet
     if (flag_newData) {
         //copy the data!
+        
+        
+        //set the isNewData flag
+        if (Iboard == 0) isNewDataPacketAvailable = true; //only the master drives whether we say new data is available
+
     }
     
     return returnVal;
   }
+  
+  public boolean isOpenBCISerialPort(Serial port) {
+    //find the openBCI that matches the given serial port
+    for (int Iboard = 0; Iboard < openBCI_boards.length; Iboard++) {
+      if (port == openBCI_boards[Iboard].serial_openBCI) {
+        return true;
+      }      
+    }
+    return false;
+  }
+    
 };
 
 class OpenBCI_ADS1299 {
@@ -612,6 +619,7 @@ class OpenBCI_ADS1299 {
       if (rawReceivedDataPacket.sampleIndex % 2 == 0) { // even data packets are from the daisy board
         offsetInd_values = rawReceivedDataPacket.values.length;  //start copying to the 8th slot
         offsetInd_aux = rawReceivedDataPacket.auxValues.length;  //start copying to the 3rd slot
+
       }
       return rawReceivedDataPacket.copyTo(dataPacket,offsetInd_values,offsetInd_aux);
     }
