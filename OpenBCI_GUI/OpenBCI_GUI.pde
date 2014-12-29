@@ -749,7 +749,7 @@ void processNewData() {
 
 
   // now let the expert handle the data
-  ovWriter.write(eegProcessing.data_std_uV);
+  //ovWriter.write(eegProcessing.data_std_uV);
 
   // show data for debug
   println(millis() + "Data sent: ");

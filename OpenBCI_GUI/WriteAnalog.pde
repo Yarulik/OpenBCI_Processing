@@ -107,8 +107,39 @@ public class WriteAnalog {
 
     int nbPoints = data[0].length;
 
+    // elapsed time since last call, update tick
+    long now = System.nanoTime() ;
+    long elapsedTime = now - tick;
+    tick = now;
+
+    // now we have to compute how many points we should have in the buffer to keep up with sample rate
+    // (NB: use same name as in write(float []) because could be shared, possible to switch between both methods on the fly)
+    double neededDuplications = sampleRate * (elapsedTime / 1000000000.0) + leftoverDuplications;
+    // since we can't send only a fraction to be perfect, at the moment we're ok with an approximation
+    long nbDuplications = Math.round(neededDuplications);
+    // nbDuplications could be 0 if framerate is very high, remember offset for next time
+    leftoverDuplications = neededDuplications - nbDuplications;
+
+    println("neededDupli: " + nbDuplications);
+    println("leftoverDuplications: " + leftoverDuplications);
+
+    // for debug: allocate new buffer
+    float[][] interpBuf = new float[data.length][(int) nbDuplications];
+
+    // interpolation to find the number of cell
+
+
     // maybe not very efficient, but acquisition server expects data points for each channels in turns, so invert i and j
-    for (int j = 0; j < nbPoints; j++) {
+    for (int j = 0; j < nbDuplications; j++) {
+
+      // we have to find to which cell correspond the current data point
+      float origPoint = lerp(0, nbPoints-1, j/(nbDuplications-1));
+      // likely it will be between two points
+      int origPointPrev = floor(origPoint);
+      int origPointNext = ceil(origPoint);
+
+      println(j + "/" + nbDuplications + " -- pointPrev: " + origPointPrev + ", pointNext: " + origPointNext + ", shift: " + (origPoint - origPointPrev)); 
+
       // fill float buffer and then pass it to TCPWriteAnalog to send over network
       for (int i = 0; i < nbChans; i++) {
 
@@ -116,7 +147,16 @@ public class WriteAnalog {
         // fetch float value
         float chan = 0;
         if (i < data.length) {
-          chan  = data[i][j];
+          // except if we just pinpoined an exact cell...
+          if (origPointPrev == origPointNext) {
+            chan  = data[i][origPointPrev];
+          }
+          // ...we have to actually interpolate data now.
+          else {
+            chan  = lerp(data[i][origPointPrev], data[i][origPointNext], origPoint - origPointPrev);
+          }
+          // for debug
+          interpBuf[i][j] = chan;
         }
         // copy byte value to the correct place of the buffer buffer
         arrayCopy(float2ByteArray(chan), 0, buffer, i*nbBytesPerFloat, nbBytesPerFloat);
@@ -126,3 +166,4 @@ public class WriteAnalog {
     }
   }
 }
+
