@@ -22,7 +22,7 @@ import static processing.core.PApplet.arrayCopy;
 
 public class WriteAnalog {
 
-  // buffer for sending data
+  // buffer for sending data (1 point per channel)
   private byte[] buffer;
   // for readability, how many bytes make one float
   private final int nbBytesPerFloat = 4;
@@ -61,6 +61,7 @@ public class WriteAnalog {
 
   // sends floats values to client
   // if array size is too big compared to nbChans sends only first elements, if too small fills with 0
+  // WARNING: in this method no buffer is used, will try to comply with sample rate by repeating values. easy but not efficient.
   public void write(float[] data) {
 
     // fill float buffer and then pass it to TCPWriteAnalog to send over network
@@ -89,6 +90,38 @@ public class WriteAnalog {
 
     // write as many times data as we need to sync with openvibe 
     for (int i = 0; i < nbDuplications; i++) {
+      s.write(buffer);
+    }
+  }
+
+  // this method, on the other hand, pipe buffered data but do not care about sample rate
+  // data[nbChans][nbPoints]
+  // TODO: interpolation
+  // TODO: check number of channels
+  public void write(float[][] data) {
+
+    // if no data, pass
+    if (data.length < 1) {
+      return;
+    }
+
+    int nbPoints = data[0].length;
+
+    // maybe not very efficient, but acquisition server expects data points for each channels in turns, so invert i and j
+    for (int j = 0; j < nbPoints; j++) {
+      // fill float buffer and then pass it to TCPWriteAnalog to send over network
+      for (int i = 0; i < nbChans; i++) {
+
+        // fill float buffer and then pass it to TCPWriteAnalog to send over network
+        // fetch float value
+        float chan = 0;
+        if (i < data.length) {
+          chan  = data[i][j];
+        }
+        // copy byte value to the correct place of the buffer buffer
+        arrayCopy(float2ByteArray(chan), 0, buffer, i*nbBytesPerFloat, nbBytesPerFloat);
+      }
+      // send channels values for this chunk
       s.write(buffer);
     }
   }

@@ -757,6 +757,9 @@ void processNewData() {
     print(eegProcessing.data_std_uV[i] + ", ");
   }
   println();
+  
+  // for real
+  ovWriter.write(yLittleBuff_uV);
 }
 
 //here is the routine that listens to the serial port.
