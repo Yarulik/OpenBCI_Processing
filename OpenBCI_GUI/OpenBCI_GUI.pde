@@ -93,10 +93,6 @@ float yLittleBuff_uV[][] = new float[nchan][nPointsPerUpdate]; //small buffer us
 EEG_Processing eegProcessing;
 EEG_Processing_User eegProcessing_user;
 
-//fft constants
-int Nfft = 256; //set resolution of the FFT.  Use N=256 for normal, N=512 for MU waves
-
-FFT fftBuff[] = new FFT[nchan];   //from the minim library
 float[] smoothFac = new float[]{0.75, 0.9, 0.95, 0.98, 0.0, 0.5};
 final int N_SMOOTHEFAC = 6;
 int smoothFac_ind = 0;
@@ -167,20 +163,6 @@ void prepareData(float[] dataBuffX, float[][] dataBuffY_uV, float fs_Hz) {
   }
 }
 
-void initializeFFTObjects(FFT[] fftBuff, float[][] dataBuffY_uV, int N, float fs_Hz) {
-
-  float[] fooData;
-  for (int Ichan=0; Ichan < nchan; Ichan++) {
-    //make the FFT objects...Following "SoundSpectrum" example that came with the Minim library
-    //fftBuff[Ichan] = new FFT(Nfft, fs_Hz);  //I can't have this here...it must be in setup
-    fftBuff[Ichan].window(FFT.HAMMING);
-
-    //do the FFT on the initial data
-    fooData = dataBuffY_uV[Ichan];
-    fooData = Arrays.copyOfRange(fooData, fooData.length-Nfft, fooData.length); 
-    fftBuff[Ichan].forward(fooData); //compute FFT on this channel of data
-  }
-}
 
 //set window size
 int win_x = 1024;  //window width
@@ -281,13 +263,6 @@ void initSystem(){
 
   verbosePrint("-- Init 1 --");
 
-  //initialize the FFT objects
-  for (int Ichan=0; Ichan < nchan; Ichan++) { 
-    println("a--"+Ichan);
-    fftBuff[Ichan] = new FFT(Nfft, openBCI.fs_Hz);
-  };  //make the FFT objects
-  println("b");
-  initializeFFTObjects(fftBuff, dataBuffY_uV, Nfft, openBCI.fs_Hz);
 
   //prepare some signal processing stuff
   //for (int Ichan=0; Ichan < nchan; Ichan++) { detData_freqDomain[Ichan] = new DetectionData_FreqDomain(); }
@@ -466,8 +441,7 @@ void initializeGUI(){
   println("2");
   gui = new Gui_Manager(this, win_x, win_y, nchan, displayTime_sec,default_vertScale_uV,filterDescription, smoothFac[smoothFac_ind]);
   println("3");
-  //associate the data to the GUI traces
-  gui.initDataTraces(dataBuffX, dataBuffY_filtY_uV, fftBuff, eegProcessing.data_std_uV, is_railed,eegProcessing.polarity);
+ 
   println("4");
   //limit how much data is plotted...hopefully to speed things up a little
   println("5");
@@ -730,7 +704,7 @@ void processNewData() {
   prevBytes = openBCI_byteCount; 
   prevMillis=millis();
   float foo_val;
-  float prevFFTdata[] = new float[fftBuff[0].specSize()];
+
   double foo;
 
   //update the data buffers
@@ -746,74 +720,12 @@ void processNewData() {
   //if you want to, re-reference the montage to make it be a mean-head reference
   if (false) rereferenceTheMontage(dataBuffY_filtY_uV);
   
-  //update the FFT (frequency spectrum)
-  for (int Ichan=0;Ichan < nchan; Ichan++) {  
-
-    //copy the previous FFT data...enables us to apply some smoothing to the FFT data
-    for (int I=0; I < fftBuff[Ichan].specSize(); I++) prevFFTdata[I] = fftBuff[Ichan].getBand(I); //copy the old spectrum values
-    
-    //prepare the data for the new FFT
-    float[] fooData_raw = dataBuffY_uV[Ichan];  //use the raw data for the FFT
-    fooData_raw = Arrays.copyOfRange(fooData_raw, fooData_raw.length-Nfft, fooData_raw.length);   //trim to grab just the most recent block of data
-    float meanData = mean(fooData_raw);  //compute the mean
-    for (int I=0; I < fooData_raw.length; I++) fooData_raw[I] -= meanData; //remove the mean (for a better looking FFT
-    
-    //compute the FFT
-    fftBuff[Ichan].forward(fooData_raw); //compute FFT on this channel of data
-    
-    
-    
-//    //convert units on fft data
-//    if (false) {
-//      //convert units to uV_per_sqrtHz...is this still correct?? CHIP 2014-10-24
-//      //final float mean_winpow_sqr = 0.3966;  //account for power lost when windowing...mean(hamming(N).^2) = 0.3966
-//      final float mean_winpow = 1.0f/sqrt(2.0f);  //account for power lost when windowing...mean(hamming(N).^2) = 0.3966
-//      final float scale_raw_to_rtHz = pow((float)fftBuff[0].specSize(),1)*fs_Hz*mean_winpow; //normalize the amplitude by the number of bins to get the correct scaling to uV/sqrt(Hz)???
-//      double foo;
-//      for (int I=0; I < fftBuff[Ichan].specSize(); I++) {  //loop over each FFT bin
-//        foo = sqrt(pow(fftBuff[Ichan].getBand(I),2)/scale_raw_to_rtHz);
-//        fftBuff[Ichan].setBand(I,(float)foo);
-//        //if ((Ichan==0) & (I > 5) & (I < 15)) println("processFreqDomain: uV/rtHz = " + I + " " + foo);
-//      }
-//    } else {
-      //convert to uV_per_bin...still need to confirm the accuracy of this code.  
-      //Do we need to account for the power lost in the windowing function?   CHIP  2014-10-24
-        for (int I=0; I < fftBuff[Ichan].specSize(); I++) {  //loop over each FFT bin
-          fftBuff[Ichan].setBand(I,(float)(fftBuff[Ichan].getBand(I) / fftBuff[Ichan].specSize()));
-        }       
-//    }
-    
-    //average the FFT with previous FFT data so that it makes it smoother in time
-    double min_val = 0.01d;
-    for (int I=0; I < fftBuff[Ichan].specSize(); I++) {   //loop over each fft bin
-      if (prevFFTdata[I] < min_val) prevFFTdata[I] = (float)min_val; //make sure we're not too small for the log calls
-      foo = fftBuff[Ichan].getBand(I); if (foo < min_val) foo = min_val; //make sure this value isn't too small
-      
-       if (true) {
-        //smooth in dB power space
-        foo =   (1.0d-smoothFac[smoothFac_ind]) * java.lang.Math.log(java.lang.Math.pow(foo,2));
-        foo += smoothFac[smoothFac_ind] * java.lang.Math.log(java.lang.Math.pow((double)prevFFTdata[I],2)); 
-        foo = java.lang.Math.sqrt(java.lang.Math.exp(foo)); //average in dB space
-      } else { 
-        //smooth (average) in linear power space
-        foo =   (1.0d-smoothFac[smoothFac_ind]) * java.lang.Math.pow(foo,2);
-        foo+= smoothFac[smoothFac_ind] * java.lang.Math.pow((double)prevFFTdata[I],2); 
-        // take sqrt to be back into uV_rtHz
-        foo = java.lang.Math.sqrt(foo);
-      }
-      fftBuff[Ichan].setBand(I,(float)foo); //put the smoothed data back into the fftBuff data holder for use by everyone else
-    } //end loop over FFT bins
-  } //end the loop over channels.
-  
-  //apply additional processing for the time-domain montage plot (ie, filtering)
-  eegProcessing.process(yLittleBuff_uV,dataBuffY_uV,dataBuffY_filtY_uV,fftBuff);
-  
+ 
   //apply user processing
   // ...yLittleBuff_uV[Ichan] is the most recent raw data since the last call to this processing routine
   // ...dataBuffY_filtY_uV[Ichan] is the full set of filtered data as shown in the time-domain plot in the GUI
   // ...fftBuff[Ichan] is the FFT data structure holding the frequency spectrum as shown in the freq-domain plot in the GUI
-  eegProcessing_user.process(yLittleBuff_uV,dataBuffY_uV,dataBuffY_filtY_uV,fftBuff);
-  
+
   //look to see if the latest data is railed so that we can notify the user on the GUI
   for (int Ichan=0;Ichan < nchan; Ichan++) is_railed[Ichan].update(dataPacketBuff[lastReadDataPacketInd].values[Ichan]);
 

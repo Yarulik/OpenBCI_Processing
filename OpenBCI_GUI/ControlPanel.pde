@@ -364,7 +364,6 @@ class ControlPanel {
 
 		if(chanButton8.isMouseHere() && chanButton8Pressed){
 			nchan = 8;
-			fftBuff = new FFT[nchan];   //from the minim library
 			yLittleBuff_uV = new float[nchan][nPointsPerUpdate];
 			output("channel count set to " + str(nchan));
 			updateChannelArrays(nchan); //make sure to reinitialize the channel arrays with the right number of channels
@@ -372,7 +371,6 @@ class ControlPanel {
 
 		if(chanButton16.isMouseHere() && chanButton16Pressed){
 			nchan = 16;
-			fftBuff = new FFT[nchan];  //reinitialize the FFT buffer
 			yLittleBuff_uV = new float[nchan][nPointsPerUpdate];
 			output("channel count set to " + str(nchan));
 			updateChannelArrays(nchan); //make sure to reinitialize the channel arrays with the right number of channels

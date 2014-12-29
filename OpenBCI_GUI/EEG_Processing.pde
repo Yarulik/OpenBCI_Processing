@@ -36,22 +36,7 @@ class EEG_Processing_User {
         //println("EEG_Processing_User: Ichan = " + Ichan + ", Isamp = " + Isamp + ", EEG Value = " + EEG_value_uV + " uV");
       }
     }
-        
-    //OR, you could loop over each EEG channel and do some sort of frequency-domain processing from the FFT data
-    float FFT_freq_Hz, FFT_value_uV;
-    for (int Ichan=0;Ichan < nchan; Ichan++) {
-      //loop over each new sample
-      for (int Ibin=0; Ibin < fftBuff[Ichan].specSize(); Ibin++){
-        FFT_freq_Hz = fftData[Ichan].indexToFreq(Ibin);
-        FFT_value_uV = fftData[Ichan].getBand(Ibin);
-        
-        //add your processing here...
-        
-        
-        
-        //println("EEG_Processing_User: Ichan = " + Ichan + ", Freq = " + FFT_freq_Hz + "Hz, FFT Value = " + FFT_value_uV + "uV/bin");
-      }
-    }  
+ 
   }
 }
    
