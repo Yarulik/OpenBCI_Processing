@@ -24,8 +24,6 @@ import ddf.minim.analysis.*; //for FFT
 import java.util.*; //for Array.copyOfRange()
 
 class Gui_Manager {
-  ScatterTrace montageTrace;
-  ScatterTrace_FFT fftTrace;
   Graph2D gMontage, gFFT, gSpectrogram;
   GridBackground gbMontage, gbFFT;
   Button stopButton;
@@ -318,7 +316,6 @@ class Gui_Manager {
     //println("Gui_Manager: updateVertScale: vertScale_uV = " + vertScale_uV);
     
     //update how the plots are scaled
-    if (montageTrace != null) montageTrace.setYScale_uV(vertScale_uV);  //the Y-axis on the montage plot is fixed...the data is simply scaled prior to plotting
     if (gFFT != null) gFFT.setYAxisMax(vertScale_uV);
     intensityFactorButton.setString("Vert Scale\n" + round(vertScale_uV) + "uV");
     
@@ -376,8 +373,6 @@ class Gui_Manager {
     //set the frequency limit of the display
     float foo_Hz = maxDisplayFreq_Hz[maxDisplayFreq_ind];
     gFFT.setXAxisMax(foo_Hz);
-    if (fftTrace != null) fftTrace.set_plotXlim(0.0f,foo_Hz);
-    //gSpectrogram.setYAxisMax(foo_Hz);
     
     //set the ticks
     if (foo_Hz < 38.0f) {
@@ -395,19 +390,6 @@ class Gui_Manager {
     if (maxDisplayFreqButton != null) maxDisplayFreqButton.setString("Max Freq\n" + round(maxDisplayFreq_Hz[maxDisplayFreq_ind]) + " Hz");
   }  
   
-  
-  public void setDoNotPlotOutsideXlim(boolean state) {
-    if (state) {
-      //println("GUI_Manager: setDoNotPlotAboveXlim: " + gFFT.getXAxis().getMaxValue());
-      fftTrace.set_plotXlim(gFFT.getXAxis().getMinValue(),gFFT.getXAxis().getMaxValue());
-      montageTrace.set_plotXlim(gMontage.getXAxis().getMinValue(),gMontage.getXAxis().getMaxValue());
-    } else {
-      fftTrace.set_plotXlim(Float.NaN,Float.NaN);
-    }
-  }
-  public void setDecimateFactor(int fac) {
-    montageTrace.setDecimateFactor(fac);
-  }
     
   public void setupMontagePlot(Graph2D g, int win_x, int win_y, float[] axis_relPos,float displayTime_sec, PlotFontInfo fontInfo,String filterDescription) {
   
@@ -557,49 +539,14 @@ class Gui_Manager {
     titleFFT.alignH = CENTER;
   }
 
-  
-  public void initializeMontageTraces(float[] dataBuffX, float [][] dataBuffY) {
-    
-    //create the trace object, add it to the  plotting object, and set the data and scale factor
-    //montageTrace  = new ScatterTrace();  //I can't have this here because it dies. It must be in setup()
-    gMontage.addTrace(montageTrace);
-    montageTrace.setXYData_byRef(dataBuffX, dataBuffY);
-    montageTrace.setYScaleFac(1f / vertScale_uV);
-    //montageTrace.setYScaleFac(1.0f); //for OpenBCI_GUI_Simpler
-    
-    //set the y-offsets for each trace in the fft plot.
-    //have each trace bumped down by -1.0.
-    for (int Ichan=0; Ichan < nchan; Ichan++) {
-      montage_yoffsets[Ichan]=(float)(-(Ichan+1));
-    }
-    montageTrace.setYOffset_byRef(montage_yoffsets);
-  }
-  
-  
-  public void initializeFFTTraces(ScatterTrace_FFT fftTrace,FFT[] fftBuff,float[] fftYOffset,Graph2D gFFT) {
-    for (int Ichan = 0; Ichan < fftYOffset.length; Ichan++) {
-      //set the Y-offste for the individual traces in the plots
-      fftYOffset[Ichan]= 0f;  //set so that there is no additional offset
-    }
-    
-    //make the trace for the FFT and add it to the FFT Plot axis
-    //fftTrace = new ScatterTrace_FFT(fftBuff); //can't put this here...must be in setup()
-    fftTrace.setYOffset(fftYOffset);
-    gFFT.addTrace(fftTrace);
-  }
+ 
     
     
   public void initDataTraces(float[] dataBuffX,float[][] dataBuffY,FFT[] fftBuff,float[] dataBuffY_std, DataStatus[] is_railed, float[] dataBuffY_polarity) {      
     //initialize the time-domain montage-plot traces
-    montageTrace = new ScatterTrace();
     montage_yoffsets = new float[nchan];
-    initializeMontageTraces(dataBuffX,dataBuffY);
-    montageTrace.set_isRailed(is_railed);
   
-    //initialize the FFT traces
-    fftTrace = new ScatterTrace_FFT(fftBuff); //can't put this here...must be in setup()
     fftYOffset = new float[nchan];
-    initializeFFTTraces(fftTrace,fftBuff,fftYOffset,gFFT);
     
   }
 
@@ -661,9 +608,7 @@ class Gui_Manager {
 //  }
   
   public void update(float[] data_std_uV,float[] data_elec_imp_ohm) {
-    //assume new data has already arrived via the pre-existing references to dataBuffX and dataBuffY and FftBuff
-    montageTrace.generate();  //graph doesn't update without this
-    fftTrace.generate(); //graph doesn't update without this
+
     cc.update();
 
     //update the text strings
@@ -672,22 +617,12 @@ class Gui_Manager {
       //update the voltage values
       val = data_std_uV[Ichan];
       chanValuesMontage[Ichan].string = String.format(getFmt(val),val) + " uVrms";
-      if (montageTrace.is_railed != null) {
-        if (montageTrace.is_railed[Ichan].is_railed == true) {
-          chanValuesMontage[Ichan].string = "RAILED";
-        } else if (montageTrace.is_railed[Ichan].is_railed_warn == true) {
-          chanValuesMontage[Ichan].string = "NEAR RAILED";
-        }
-      } 
+
       
       //update the impedance values
       val = data_elec_imp_ohm[Ichan]/1000;
       impValuesMontage[Ichan].string = String.format(getFmt(val),val) + " kOhm";
-      if (montageTrace.is_railed != null) {
-        if (montageTrace.is_railed[Ichan].is_railed == true) {
-          impValuesMontage[Ichan].string = "RAILED";
-        }
-      }
+
     }
   }
   

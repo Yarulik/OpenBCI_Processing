@@ -470,9 +470,7 @@ void initializeGUI(){
   gui.initDataTraces(dataBuffX, dataBuffY_filtY_uV, fftBuff, eegProcessing.data_std_uV, is_railed,eegProcessing.polarity);
   println("4");
   //limit how much data is plotted...hopefully to speed things up a little
-  gui.setDoNotPlotOutsideXlim(true);
   println("5");
-  gui.setDecimateFactor(2);
   println("6");
 }
 
