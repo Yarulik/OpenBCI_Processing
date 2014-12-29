@@ -30,7 +30,6 @@ class Gui_Manager {
   GridBackground gbMontage, gbFFT;
   Button stopButton;
   PlotFontInfo fontInfo;
-  HeadPlot headPlot1;
   Button[] chanButtons;
   // Button guiPageButton;
   //boolean showImpedanceButtons;
@@ -201,8 +200,6 @@ class Gui_Manager {
     // axisHead_relPos[1] = gutter_topbot + spacer_top;  //set y position to be at top of left side
     axisHead_relPos[1] = headPlot_fromTop;  //set y position to be at top of right side
     axisHead_relPos[3] = available_top2bot*up_down_split  - gutter_topbot;
-    headPlot1 = new HeadPlot(axisHead_relPos[0],axisHead_relPos[1],axisHead_relPos[2],axisHead_relPos[3],win_x,win_y,nchan);
-    setSmoothFac(smooth_fac);
     
     //setup the buttons
     int w,h,x,y;
@@ -268,10 +265,10 @@ class Gui_Manager {
     maxDisplayFreqButton = new Button(x,y,w,h,"Max Freq\n" + round(maxDisplayFreq_Hz[maxDisplayFreq_ind]) + " Hz",fontInfo.buttonLabel_size);
 
     x = calcButtonXLocation(Ibut++, win_x, w, xoffset,gutter_between_buttons);
-    showPolarityButton = new Button(x,y,w,h,"Polarity\n" + headPlot1.getUsePolarityTrueFalse(),fontInfo.buttonLabel_size);
+    showPolarityButton = new Button(x,y,w,h,"Polarity\n",fontInfo.buttonLabel_size);
 
     x = calcButtonXLocation(Ibut++, win_x, w, xoffset,gutter_between_buttons);
-    smoothingButton = new Button(x,y,w,h,"Smooth\n" + headPlot1.smooth_fac,fontInfo.buttonLabel_size);
+    smoothingButton = new Button(x,y,w,h,"Smooth\n",fontInfo.buttonLabel_size);
 
     x = calcButtonXLocation(Ibut++, win_x, w, xoffset,gutter_between_buttons);
     loglinPlotButton = new Button(x,y,w,h,"Vert Scale\n" + get_vertScaleAsLogText(),fontInfo.buttonLabel_size);
@@ -326,7 +323,6 @@ class Gui_Manager {
     //update how the plots are scaled
     if (montageTrace != null) montageTrace.setYScale_uV(vertScale_uV);  //the Y-axis on the montage plot is fixed...the data is simply scaled prior to plotting
     if (gFFT != null) gFFT.setYAxisMax(vertScale_uV);
-    headPlot1.setMaxIntensity_uV(vertScale_uV);
     intensityFactorButton.setString("Vert Scale\n" + round(vertScale_uV) + "uV");
     
     //update the Yticks on the FFT plot
@@ -363,18 +359,12 @@ class Gui_Manager {
           updateVertScale();  //force a re-do of the Yticks
       }
     }
-    
-    //change the head plot
-    headPlot1.set_plotColorAsLog(vertScaleAsLog);
+
     
     //change the button
     if (loglinPlotButton != null) {
       loglinPlotButton.setString("Vert Scale\n" + get_vertScaleAsLogText());
     }
-  }
-  
-  public void setSmoothFac(float fac) {
-    headPlot1.smooth_fac = fac;
   }
   
   public void setMaxDisplayFreq_ind(int ind) {
@@ -657,9 +647,6 @@ class Gui_Manager {
     fftYOffset = new float[nchan];
     initializeFFTTraces(fftTrace,fftBuff,fftYOffset,gFFT);
     
-    //link the data to the head plot
-    headPlot1.setIntensityData_byRef(dataBuffY_std,is_railed);
-    headPlot1.setPolarityData_byRef(dataBuffY_polarity);
   }
 
   public void setShowSpectrogram(boolean show) {
@@ -736,7 +723,6 @@ class Gui_Manager {
     //assume new data has already arrived via the pre-existing references to dataBuffX and dataBuffY and FftBuff
     montageTrace.generate();  //graph doesn't update without this
     fftTrace.generate(); //graph doesn't update without this
-    headPlot1.update();
     cc.update();
 
     //update the text strings
@@ -777,7 +763,6 @@ class Gui_Manager {
   }
   
   public void draw() {
-    headPlot1.draw();
     
     //draw montage or spectrogram
     if (showSpectrogram == false) {

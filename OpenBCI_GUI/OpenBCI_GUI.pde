@@ -989,9 +989,6 @@ void mousePressed() {
         GraphDataPoint dataPoint = new GraphDataPoint();
         gui.getFFTdataPoint(mouseX,mouseY,dataPoint);
         println("OpenBCI_GUI: FFT data point: " + String.format("%4.2f",dataPoint.x) + " " + dataPoint.x_units + ", " + String.format("%4.2f",dataPoint.y) + " " + dataPoint.y_units);
-      } else if (gui.headPlot1.isPixelInsideHead(mouseX,mouseY)) {
-        //toggle the head plot contours
-        gui.headPlot1.drawHeadAsContours = !gui.headPlot1.drawHeadAsContours;
       } else if (gui.isMouseOnMontage(mouseX,mouseY)) {
         //toggle the display of the montage values
         gui.showMontageValues  = !gui.showMontageValues;
@@ -1357,18 +1354,15 @@ void incrementSmoothing() {
   smoothFac_ind++;
   if (smoothFac_ind >= N_SMOOTHEFAC) smoothFac_ind = 0;
   
-  //tell the GUI
-  gui.setSmoothFac(smoothFac[smoothFac_ind]);
   
   //update the button
   gui.smoothingButton.but_txt = "Smooth\n" + smoothFac[smoothFac_ind];
 }
 
 void toggleShowPolarity() {
-  gui.headPlot1.use_polarity = !gui.headPlot1.use_polarity;
   
   //update the button
-  gui.showPolarityButton.but_txt = "Show Polarity\n" + gui.headPlot1.getUsePolarityTrueFalse();
+  gui.showPolarityButton.but_txt = "Show Polarity\n";
 }
 
 void fileSelected(File selection) {  //called by the Open File dialog box after a file has been selected
