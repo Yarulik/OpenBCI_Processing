@@ -56,9 +56,7 @@ class Gui_Manager {
   boolean showMontageValues;
   public int guiPage;
   boolean vertScaleAsLog = true;
-  Spectrogram spectrogram;
-  boolean showSpectrogram;
-  int whichChannelForSpectrogram;
+
 
   //define some color variables
   int bgColorGraphs = 255;
@@ -92,8 +90,7 @@ class Gui_Manager {
     String filterDescription, float smooth_fac) {  
 //  Gui_Manager(PApplet parent,int win_x, int win_y,int nchan,float displayTime_sec, float yScale_uV, float fs_Hz,
 //      String montageFilterText, String detectName) {
-    showSpectrogram = false;  
-    whichChannelForSpectrogram = 0; //assume
+   
     
      //define some layout parameters
     float axes_x, axes_y;
@@ -559,50 +556,7 @@ class Gui_Manager {
     titleFFT.setFontSize(16);
     titleFFT.alignH = CENTER;
   }
-  
-  public void setupSpectrogram(Graph2D g, int win_x, int win_y, float[] axis_relPos,float displayTime_sec, PlotFontInfo fontInfo) {
-    //start by setting up as if it were the montage plot
-    //setupMontagePlot(g, win_x, win_y, axis_relPos,displayTime_sec,fontInfo,title);
-    
-    g.setAxisColour(220, 220, 220);
-    g.setFontColour(255, 255, 255);
-  
-    int x1 = int(axis_relPos[0]*float(win_x));
-    g.position.x = x1;
-    int y1 = int(axis_relPos[1]*float(win_y));
-    g.position.y = y1;
-    
-    //setup the x axis
-    g.setXAxisMin(-displayTime_sec);
-    g.setXAxisMax(0f);
-    g.setXAxisTickSpacing(1f);
-    g.setXAxisMinorTicks(1);
-    g.setXAxisLabelAccuracy(0);
-    g.setXAxisLabel("Time (sec)");
-    g.setXAxisLabelFont(fontInfo.fontName,fontInfo.axisLabel_size, false);
-    g.setXAxisTickFont(fontInfo.fontName,fontInfo.tickLabel_size, false);
- 
-    //setup the y axis...frequency
-    g.setYAxisMin(0.0f-0.5f);
-    g.setYAxisMax(maxDisplayFreq_Hz[maxDisplayFreq_ind]);
-    g.setYAxisTickSpacing(10.0f);
-    g.setYAxisMinorTicks(2);
-    g.setYAxisLabelAccuracy(0);
-    g.setYAxisLabel("Frequency (Hz)");
-    g.setYAxisLabelFont(fontInfo.fontName,fontInfo.axisLabel_size, false);
-    g.setYAxisTickFont(fontInfo.fontName,fontInfo.tickLabel_size, false);
-        
-        
-    //make title
-    titleSpectrogram = new TextBox(makeSpectrogramTitle(),0,0);
-    int x2 = x1 + int(round(0.5*axis_relPos[2]*float(win_x)));
-    int y2 = y1 - 2;  //deflect two pixels upward
-    titleSpectrogram.x = x2;
-    titleSpectrogram.y = y2;
-    titleSpectrogram.textColor = color(255,255,255);
-    titleSpectrogram.setFontSize(16);
-    titleSpectrogram.alignH = CENTER;
-  }
+
   
   public void initializeMontageTraces(float[] dataBuffX, float [][] dataBuffY) {
     
@@ -649,19 +603,6 @@ class Gui_Manager {
     
   }
 
-  public void setShowSpectrogram(boolean show) {
-    showSpectrogram = show;
-  } 
-
-  public void tellGUIWhichChannelForSpectrogram(int Ichan) { // Ichan starts at zero
-    if (Ichan != whichChannelForSpectrogram) {
-      whichChannelForSpectrogram = Ichan;
-      titleSpectrogram.string = makeSpectrogramTitle();
-    }
-  }
-  public String makeSpectrogramTitle() {
-    return ("Spectrogram, Channel " + (whichChannelForSpectrogram+1) + " (As Received)");
-  }
   
  
   public void setGUIpage(int page) {
@@ -764,35 +705,7 @@ class Gui_Manager {
   
   public void draw() {
     
-    //draw montage or spectrogram
-    if (showSpectrogram == false) {
-
-      //show time-domain montage, only if full channel controller is not visible, to save some processing
-      gMontage.draw(); 
-    
-      //add annotations
-      if (showMontageValues) {
-        for (int Ichan = 0; Ichan < chanValuesMontage.length; Ichan++) {
-          chanValuesMontage[Ichan].draw();
-        }
-      }
-    } else {
-      //show the spectrogram
-      gSpectrogram.draw();  //draw the spectrogram axes
-      titleSpectrogram.draw(); //draw the spectrogram title
-
-      //draw the spectrogram image
-      PVector pos = gSpectrogram.position;
-      Axis2D ax = gSpectrogram.getXAxis();
-      int x = ax.valueToPosition(ax.getMinValue())+(int)pos.x;
-      int w = ax.valueToPosition(ax.getMaxValue());
-      ax = gSpectrogram.getYAxis();
-      int y =  (int) pos.y - ax.valueToPosition(ax.getMinValue()); //position needs top-left.  The MAX value is at the top-left for this plot.
-      int h = ax.valueToPosition(ax.getMaxValue());
-      //println("gui_Manager.draw(): x,y,w,h = " + x + " " + y + " " + w + " " + h);
-      float max_freq_Hz = gSpectrogram.getYAxis().getMaxValue()-0.5f;
-      spectrogram.draw(x,y,w,h,max_freq_Hz);
-    }
+  
 
     //draw the regular FFT spectrum display
     gFFT.draw(); 
