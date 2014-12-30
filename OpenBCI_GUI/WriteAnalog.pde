@@ -36,14 +36,23 @@ public class WriteAnalog {
   // Which pace we have to keep up with to sync with client
   private int sampleRate;
 
+  // if true, try to sync output data with samplerate and elapsed time, if false just pass data through
+  private boolean correctJitter;
+
   // Last time we sent data (in nanoseconds since sample rate can get *really* high)
   private long tick;
   // We may have sent a little bit less or a little bit more to keep up with samplerate, record this to avoid offset
   private double leftoverDuplications = 0;
 
   public WriteAnalog(PApplet caller, int port, int nbChans, int sampleRate) {
+    this(caller, port, nbChans, sampleRate, true);
+  }
+
+  // optional: explicitely set jitter correction (true by default)
+  public WriteAnalog(PApplet caller, int port, int nbChans, int sampleRate, boolean correctJitter) {
     this.nbChans = nbChans;
     this.sampleRate = sampleRate;
+    this.correctJitter = correctJitter;
     // 4 bytes per float values for the buffer
     buffer = new byte[nbChans*nbBytesPerFloat];
     // init network
@@ -79,9 +88,9 @@ public class WriteAnalog {
     long now = System.nanoTime();
     long elapsedTime = now - tick;
 
-    // only try to duplicate if we already started to send data
+    // only try to duplicate if we already started to send data and if option set
     double neededDuplications = 1;
-    if (tick >= 0) {
+    if (correctJitter && tick >= 0) {
       // now we have to compute how many times we should send data to keep up with sample rate (oversampling)
       // NB: could be 0 if framerate is very high
       neededDuplications = sampleRate * (elapsedTime / 1000000000.0) + leftoverDuplications;
@@ -116,9 +125,9 @@ public class WriteAnalog {
     long now = System.nanoTime() ;
     long elapsedTime = now - tick;
 
-    // only try to duplicate if we already started to send data
+    // only try to duplicate if we already started to send data and if option set
     double neededDuplications = data.length;
-    if (tick >= 0) {
+    if (correctJitter && tick >= 0) {
       // now we have to compute how many points we should have in the buffer to keep up with sample rate
       // (NB: use same name as in write(float []) because could be shared, possible to switch between both methods on the fly)
       neededDuplications = sampleRate * (elapsedTime / 1000000000.0) + leftoverDuplications;

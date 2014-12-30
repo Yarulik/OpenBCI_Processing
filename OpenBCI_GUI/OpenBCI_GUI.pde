@@ -30,6 +30,8 @@ WriteAnalog ovWriter;
 final int TCPServerPort = 12345;
 // FIXME: should use openBCI.fs_Hz instead
 final int TCPSampleRate = 256;
+// if true, try to sync output data with samplerate and elapsed time, if false just pass data through
+final boolean TCPCorrectJitter = true;
 /** end config TCP server **/
 
 boolean isVerbose = true; //set true if you want more verbosity in console
@@ -335,7 +337,7 @@ void initSystem() {
   println("Init TCP server for openvibe: " + nchan + " channels at " +  openBCI.fs_Hz + " Hz");
   //ovWriter = new WriteAnalog(this, TCPServerPort, nchan, (int) openBCI.fs_Hz);
   // should round openBCI.fs_Hz to next power of 2 instead
-  ovWriter = new WriteAnalog(this, TCPServerPort, nchan, TCPSampleRate);
+  ovWriter = new WriteAnalog(this, TCPServerPort, nchan, TCPSampleRate, TCPCorrectJitter);
 }
 
 int hardwareSyncStep = 0; //start this at 0...
@@ -757,7 +759,7 @@ void processNewData() {
     print(eegProcessing.data_std_uV[i] + ", ");
   }
   println();
-  
+
   // for real
   ovWriter.write(yLittleBuff_uV);
 }
