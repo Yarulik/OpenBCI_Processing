@@ -754,11 +754,11 @@ void processNewData() {
   //ovWriter.write(eegProcessing.data_std_uV);
 
   // show data for debug
-  println(millis() + "Data sent: ");
-  for (int i = 0; i < nchan; i++) {
-    print(eegProcessing.data_std_uV[i] + ", ");
-  }
-  println();
+//  println(millis() + "Data sent: ");
+//  for (int i = 0; i < nchan; i++) {
+//    print(eegProcessing.data_std_uV[i] + ", ");
+//  }
+//  println();
 
   // for real
   ovWriter.write(yLittleBuff_uV);

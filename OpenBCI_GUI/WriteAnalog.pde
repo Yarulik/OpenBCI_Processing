@@ -36,6 +36,8 @@ public class WriteAnalog {
   // Which pace we have to keep up with to sync with client
   private int sampleRate;
 
+  private boolean debug = false;
+
   // if true, try to sync output data with samplerate and elapsed time, if false just pass data through
   private boolean correctJitter;
 
@@ -59,6 +61,10 @@ public class WriteAnalog {
     s = new Server(caller, port);
     // init clock with dummy value, t=0 will correspond to the first value sent
     tick = -1;
+  }
+
+  private setDebug(boolean debug) {
+    this.debug = debug;
   }
 
   // convert from float to bytes
@@ -139,11 +145,13 @@ public class WriteAnalog {
     // nbDuplications could be 0 if framerate is very high, remember offset for next time
     leftoverDuplications = neededDuplications - nbDuplications;
 
-    println("neededDupli: " + nbDuplications);
-    println("leftoverDuplications: " + leftoverDuplications);
+    if (debug) {
+      println("neededDupli: " + nbDuplications);
+      println("leftoverDuplications: " + leftoverDuplications);
 
-    // for debug: allocate new buffer
-    float[][] interpBuf = new float[data.length][(int) nbDuplications];
+      // for debug: allocate new buffer
+      float[][] interpBuf = new float[data.length][(int) nbDuplications];
+    }
 
     // will interpolate and send values altogether
     // maybe not very efficient, but acquisition server expects data points for each channels in turns, so invert i and j
@@ -156,7 +164,9 @@ public class WriteAnalog {
       int origPointPrev = floor(origPoint);
       int origPointNext = ceil(origPoint);
 
-      println(j + "/" + nbDuplications + " -- pointPrev: " + origPointPrev + ", pointNext: " + origPointNext + ", shift: " + (origPoint - origPointPrev)); 
+      if (debug) {
+        println(j + "/" + nbDuplications + " -- pointPrev: " + origPointPrev + ", pointNext: " + origPointNext + ", shift: " + (origPoint - origPointPrev));
+      }
 
       // fill float buffer and then pass it to TCPWriteAnalog to send over network
       for (int i = 0; i < nbChans; i++) {
@@ -173,8 +183,10 @@ public class WriteAnalog {
           else {
             chan  = lerp(data[i][origPointPrev], data[i][origPointNext], origPoint - origPointPrev);
           }
-          // for debug
-          interpBuf[i][j] = chan;
+
+          if (debug) {
+            interpBuf[i][j] = chan;
+          }
         }
         // copy byte value to the correct place of the buffer buffer
         arrayCopy(float2ByteArray(chan), 0, buffer, i*nbBytesPerFloat, nbBytesPerFloat);
@@ -184,18 +196,20 @@ public class WriteAnalog {
     }
 
     // debug
-    for (int i = 0; i < data.length; i++) {
-      print("chan"+i+ ": ");
-      for (int j = 0; j < nbPoints; j++) {
-        print(data[i][j] + ", ");
-      }
-      println();
+    if (debug) {
+      for (int i = 0; i < data.length; i++) {
+        print("chan"+i+ ": ");
+        for (int j = 0; j < nbPoints; j++) {
+          print(data[i][j] + ", ");
+        }
+        println();
 
-      print("chan"+i+ ": ");
-      for (int j = 0; j < nbDuplications; j++) {
-        print(interpBuf[i][j] + ", ");
+        print("chan"+i+ ": ");
+        for (int j = 0; j < nbDuplications; j++) {
+          print(interpBuf[i][j] + ", ");
+        }
+        println();
       }
-      println();
     }
   }
 }
