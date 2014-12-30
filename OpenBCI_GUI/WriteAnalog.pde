@@ -173,6 +173,21 @@ public class WriteAnalog {
       // send channels values for this chunk
       s.write(buffer);
     }
+
+    // debug
+    for (int i = 0; i < data.length; i++) {
+      print("chan"+i+ ": ");
+      for (int j = 0; j < nbPoints; j++) {
+        print(data[i][j] + ", ");
+      }
+      println();
+
+      print("chan"+i+ ": ");
+      for (int j = 0; j < nbDuplications; j++) {
+        print(interpBuf[i][j] + ", ");
+      }
+      println();
+    }
   }
 }
 
