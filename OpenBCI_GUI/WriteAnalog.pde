@@ -126,7 +126,7 @@ public class WriteAnalog {
     long elapsedTime = now - tick;
 
     // only try to duplicate if we already started to send data and if option set
-    double neededDuplications = data.length;
+    double neededDuplications = nbPoints;
     if (correctJitter && tick >= 0) {
       // now we have to compute how many points we should have in the buffer to keep up with sample rate
       // (NB: use same name as in write(float []) because could be shared, possible to switch between both methods on the fly)
