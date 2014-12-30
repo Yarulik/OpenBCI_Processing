@@ -48,8 +48,8 @@ public class WriteAnalog {
     buffer = new byte[nbChans*nbBytesPerFloat];
     // init network
     s = new Server(caller, port);
-    // init clock
-    tick = caller.millis();
+    // init clock with dummy value, t=0 will correspond to the first value sent
+    tick = -1;
   }
 
   // convert from float to bytes
@@ -76,13 +76,18 @@ public class WriteAnalog {
     }
 
     // elapsed time since last call, update tick
-    long now = System.nanoTime() ;
+    long now = System.nanoTime();
     long elapsedTime = now - tick;
+
+    // only try to duplicate if we already started to send data
+    double neededDuplications = 1;
+    if (tick >= 0) {
+      // now we have to compute how many times we should send data to keep up with sample rate (oversampling)
+      // NB: could be 0 if framerate is very high
+      neededDuplications = sampleRate * (elapsedTime / 1000000000.0) + leftoverDuplications;
+    }
     tick = now;
 
-    // now we have to compute how many times we should send data to keep up with sample rate (oversampling)
-    // NB: could be 0 if framerate is very high
-    double neededDuplications = sampleRate * (elapsedTime / 1000000000.0) + leftoverDuplications;
     // since we can't send only a fraction to be perfect, at the moment we're ok with an approximation
     long nbDuplications = Math.round(neededDuplications);
     // nbDuplications could be 0 if framerate is very high, remember offset for next time
@@ -110,11 +115,16 @@ public class WriteAnalog {
     // elapsed time since last call, update tick
     long now = System.nanoTime() ;
     long elapsedTime = now - tick;
+
+    // only try to duplicate if we already started to send data
+    double neededDuplications = data.length;
+    if (tick >= 0) {
+      // now we have to compute how many points we should have in the buffer to keep up with sample rate
+      // (NB: use same name as in write(float []) because could be shared, possible to switch between both methods on the fly)
+      neededDuplications = sampleRate * (elapsedTime / 1000000000.0) + leftoverDuplications;
+    }
     tick = now;
 
-    // now we have to compute how many points we should have in the buffer to keep up with sample rate
-    // (NB: use same name as in write(float []) because could be shared, possible to switch between both methods on the fly)
-    double neededDuplications = sampleRate * (elapsedTime / 1000000000.0) + leftoverDuplications;
     // since we can't send only a fraction to be perfect, at the moment we're ok with an approximation
     long nbDuplications = Math.round(neededDuplications);
     // nbDuplications could be 0 if framerate is very high, remember offset for next time
@@ -126,14 +136,13 @@ public class WriteAnalog {
     // for debug: allocate new buffer
     float[][] interpBuf = new float[data.length][(int) nbDuplications];
 
-    // interpolation to find the number of cell
-
-
+    // will interpolate and send values altogether
     // maybe not very efficient, but acquisition server expects data points for each channels in turns, so invert i and j
     for (int j = 0; j < nbDuplications; j++) {
 
       // we have to find to which cell correspond the current data point
-      float origPoint = lerp(0, nbPoints-1, j/(nbDuplications-1));
+      float ratio = (float) j/(nbDuplications-1);
+      float origPoint = lerp(0, nbPoints-1, ratio);
       // likely it will be between two points
       int origPointPrev = floor(origPoint);
       int origPointNext = ceil(origPoint);
