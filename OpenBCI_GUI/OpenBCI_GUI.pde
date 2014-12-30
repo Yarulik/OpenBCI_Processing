@@ -29,7 +29,10 @@ import java.awt.event.*; //to allow for event listener on screen resize
 WriteAnalog ovWriter;
 final int TCPServerPort = 12345;
 // FIXME: should use openBCI.fs_Hz instead
-final int TCPSampleRate = 256;
+//final int TCPSampleRate = 256;
+final int TCPSampleRate = -1;
+// 1.024 to go from 250hz to 256
+final float TCPSamplingRatio = 1.024;
 // if true, try to sync output data with samplerate and elapsed time, if false just pass data through
 final boolean TCPCorrectJitter = true;
 /** end config TCP server **/
@@ -337,7 +340,13 @@ void initSystem() {
   println("Init TCP server for openvibe: " + nchan + " channels at " +  openBCI.fs_Hz + " Hz");
   //ovWriter = new WriteAnalog(this, TCPServerPort, nchan, (int) openBCI.fs_Hz);
   // should round openBCI.fs_Hz to next power of 2 instead
-  ovWriter = new WriteAnalog(this, TCPServerPort, nchan, TCPSampleRate, TCPCorrectJitter);
+  if (TCPSampleRate > 0) {
+    ovWriter = new WriteAnalog(this, TCPServerPort, nchan, TCPSampleRate);
+  } else if (TCPSamplingRatio > 0) {
+    ovWriter = new WriteAnalog(this, TCPServerPort, nchan, TCPSamplingRatio);
+  } else {
+    ovWriter = new WriteAnalog(this, TCPServerPort, nchan);
+  }
 }
 
 int hardwareSyncStep = 0; //start this at 0...
@@ -754,11 +763,11 @@ void processNewData() {
   //ovWriter.write(eegProcessing.data_std_uV);
 
   // show data for debug
-//  println(millis() + "Data sent: ");
-//  for (int i = 0; i < nchan; i++) {
-//    print(eegProcessing.data_std_uV[i] + ", ");
-//  }
-//  println();
+  //  println(millis() + "Data sent: ");
+  //  for (int i = 0; i < nchan; i++) {
+  //    print(eegProcessing.data_std_uV[i] + ", ");
+  //  }
+  //  println();
 
   // for real
   ovWriter.write(yLittleBuff_uV);

@@ -20,6 +20,8 @@ import static processing.core.PApplet.arrayCopy;
 
 // TODO: maybe use a queue to push data from main program and *then* send values (will need interpolation though)
 
+// TODO: doc and more comprehensible handling of data 
+
 public class WriteAnalog {
 
   // buffer for sending data (1 point per channel)
@@ -34,27 +36,24 @@ public class WriteAnalog {
   private int nbChans;
 
   // Which pace we have to keep up with to sync with client
-  private int sampleRate;
+  private int sampleRate = -1;
+
+  // other solution, better used with round ratio, force the number of data points written in TCP
+  // e.g. : to convert from 250Hz to 256, give buffer of length 125 to write(float [][]) and use a 1.024 ratio to obtain 128 points in output
+  // WARNING: no way to avoid jitter if the fraction is not exact (e.g. 1/3 is not good)
+  // > 1 for oversampling, < 1 for downsampling
+  private float samplingFactor = -1;
 
   private boolean debug = false;
-
-  // if true, try to sync output data with samplerate and elapsed time, if false just pass data through
-  private boolean correctJitter;
 
   // Last time we sent data (in nanoseconds since sample rate can get *really* high)
   private long tick;
   // We may have sent a little bit less or a little bit more to keep up with samplerate, record this to avoid offset
   private double leftoverDuplications = 0;
 
-  public WriteAnalog(PApplet caller, int port, int nbChans, int sampleRate) {
-    this(caller, port, nbChans, sampleRate, true);
-  }
-
-  // optional: explicitely set jitter correction (true by default)
-  public WriteAnalog(PApplet caller, int port, int nbChans, int sampleRate, boolean correctJitter) {
+  // with this constructor, will just pass data through
+  public WriteAnalog(PApplet caller, int port, int nbChans) {
     this.nbChans = nbChans;
-    this.sampleRate = sampleRate;
-    this.correctJitter = correctJitter;
     // 4 bytes per float values for the buffer
     buffer = new byte[nbChans*nbBytesPerFloat];
     // init network
@@ -63,7 +62,23 @@ public class WriteAnalog {
     tick = -1;
   }
 
-  private setDebug(boolean debug) {
+  // use this consructor to correct automatically jitter based on elapsed time, trying to catch up with desired sample rate
+  public WriteAnalog(PApplet caller, int port, int nbChans, int sampleRate) {
+    this(caller, port, nbChans);
+    // would mean nothing and mess up with internal control to have negative sample rate
+    assert (sampleRate > 0);
+    this.sampleRate = sampleRate;
+  }
+
+  // this constructor will interpolate by samplingFactor output data (cf before for more precisions)
+  public WriteAnalog(PApplet caller, int port, int nbChans, float samplingFactor) {
+    this(caller, port, nbChans);
+    // would mean nothing and mess up with internal control to have negative ratio
+    assert (samplingFactor > 0);
+    this.samplingFactor = samplingFactor;
+  }
+
+  private void setDebug(boolean debug) {
     this.debug = debug;
   }
 
@@ -90,18 +105,23 @@ public class WriteAnalog {
       arrayCopy(float2ByteArray(chan), 0, buffer, i*nbBytesPerFloat, nbBytesPerFloat);
     }
 
-    // elapsed time since last call, update tick
-    long now = System.nanoTime();
-    long elapsedTime = now - tick;
-
-    // only try to duplicate if we already started to send data and if option set
     double neededDuplications = 1;
-    if (correctJitter && tick >= 0) {
-      // now we have to compute how many times we should send data to keep up with sample rate (oversampling)
-      // NB: could be 0 if framerate is very high
-      neededDuplications = sampleRate * (elapsedTime / 1000000000.0) + leftoverDuplications;
+
+    if (sampleRate > 0) {
+      // elapsed time since last call, update tick
+      long now = System.nanoTime();
+      long elapsedTime = now - tick;
+
+      // only try to duplicate if we already started to send data
+      if (tick >= 0) {
+        // now we have to compute how many times we should send data to keep up with sample rate (oversampling)
+        // NB: could be 0 if framerate is very high
+        neededDuplications = sampleRate * (elapsedTime / 1000000000.0) + leftoverDuplications;
+      }
+      tick = now;
+    } else if (samplingFactor > 0) {
+      neededDuplications = neededDuplications * samplingFactor;
     }
-    tick = now;
 
     // since we can't send only a fraction to be perfect, at the moment we're ok with an approximation
     long nbDuplications = Math.round(neededDuplications);
@@ -127,18 +147,24 @@ public class WriteAnalog {
 
     int nbPoints = data[0].length;
 
-    // elapsed time since last call, update tick
-    long now = System.nanoTime() ;
-    long elapsedTime = now - tick;
-
     // only try to duplicate if we already started to send data and if option set
     double neededDuplications = nbPoints;
-    if (correctJitter && tick >= 0) {
-      // now we have to compute how many points we should have in the buffer to keep up with sample rate
-      // (NB: use same name as in write(float []) because could be shared, possible to switch between both methods on the fly)
-      neededDuplications = sampleRate * (elapsedTime / 1000000000.0) + leftoverDuplications;
+
+    if (sampleRate > 0) {
+      // elapsed time since last call, update tick
+      long now = System.nanoTime() ;
+      long elapsedTime = now - tick;
+
+
+      if (tick >= 0) {
+        // now we have to compute how many points we should have in the buffer to keep up with sample rate
+        // (NB: use same name as in write(float []) because could be shared, possible to switch between both methods on the fly)
+        neededDuplications = sampleRate * (elapsedTime / 1000000000.0) + leftoverDuplications;
+      }
+      tick = now;
+    } else if (samplingFactor > 0) {
+      neededDuplications = neededDuplications * samplingFactor;
     }
-    tick = now;
 
     // since we can't send only a fraction to be perfect, at the moment we're ok with an approximation
     long nbDuplications = Math.round(neededDuplications);
@@ -148,9 +174,6 @@ public class WriteAnalog {
     if (debug) {
       println("neededDupli: " + nbDuplications);
       println("leftoverDuplications: " + leftoverDuplications);
-
-      // for debug: allocate new buffer
-      float[][] interpBuf = new float[data.length][(int) nbDuplications];
     }
 
     // will interpolate and send values altogether
@@ -183,33 +206,12 @@ public class WriteAnalog {
           else {
             chan  = lerp(data[i][origPointPrev], data[i][origPointNext], origPoint - origPointPrev);
           }
-
-          if (debug) {
-            interpBuf[i][j] = chan;
-          }
         }
         // copy byte value to the correct place of the buffer buffer
         arrayCopy(float2ByteArray(chan), 0, buffer, i*nbBytesPerFloat, nbBytesPerFloat);
       }
       // send channels values for this chunk
       s.write(buffer);
-    }
-
-    // debug
-    if (debug) {
-      for (int i = 0; i < data.length; i++) {
-        print("chan"+i+ ": ");
-        for (int j = 0; j < nbPoints; j++) {
-          print(data[i][j] + ", ");
-        }
-        println();
-
-        print("chan"+i+ ": ");
-        for (int j = 0; j < nbDuplications; j++) {
-          print(interpBuf[i][j] + ", ");
-        }
-        println();
-      }
     }
   }
 }
