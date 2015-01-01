@@ -26,6 +26,7 @@ import processing.serial.*;  //for serial communication to Arduino/OpenBCI
 import java.awt.event.*; //to allow for event listener on screen resize
 
 // best library ever, write to TCP in format readable by OpenViBE acquisition server
+import processing.net.*;
 import fr.inria.openvibelink.write.*;
 
 /** config for TCP server **/
