@@ -1,5 +1,5 @@
 
-Execute launch_ov-acquisition-server_processing.sh to acquire data from Processing.
+Execute launch_ov-acquisition-server_processing.sh to acquire data from Processing (linux).
 
 NB: using openvibe 0.18 with an acquisiton server binary named "ov-server-0.18".
 
