@@ -1,7 +1,7 @@
 <OpenViBE-Scenario>
 	<Boxes>
 		<Box>
-			<Identifier>(0x1c5d95d2, 0x404cba8b)</Identifier>
+			<Identifier>(0x34e14bdb, 0x5f2f43ab)</Identifier>
 			<Name>Signal display</Name>
 			<AlgorithmClassIdentifier>(0x0055be5f, 0x087bdd12)</AlgorithmClassIdentifier>
 			<Inputs>
@@ -91,7 +91,7 @@
 			</Attributes>
 		</Box>
 		<Box>
-			<Identifier>(0x794f12b4, 0x201204b7)</Identifier>
+			<Identifier>(0x3e4b3ab7, 0x4abee776)</Identifier>
 			<Name>Acquisition client</Name>
 			<AlgorithmClassIdentifier>(0x35d225cb, 0x3e6e3a5f)</AlgorithmClassIdentifier>
 			<Outputs>
@@ -124,7 +124,7 @@
 					<TypeIdentifier>(0x007deef9, 0x2f3e95c6)</TypeIdentifier>
 					<Name>Acquisition server port</Name>
 					<DefaultValue>1024</DefaultValue>
-					<Value>1025</Value>
+					<Value>1024</Value>
 					<Modifiability>false</Modifiability>
 				</Setting>
 			</Settings>
@@ -154,6 +154,10 @@
 					<Value>(0x00000000, 0x00418942)</Value>
 				</Attribute>
 				<Attribute>
+					<Identifier>(0xc67a01dc, 0x28ce06c1)</Identifier>
+					<Value></Value>
+				</Attribute>
+				<Attribute>
 					<Identifier>(0xc73e83ec, 0xf855c5bc)</Identifier>
 					<Value>false</Value>
 				</Attribute>
@@ -170,13 +174,13 @@
 	</Boxes>
 	<Links>
 		<Link>
-			<Identifier>(0x2ddafba0, 0x59259f39)</Identifier>
+			<Identifier>(0x5eb2e280, 0x44e08eec)</Identifier>
 			<Source>
-				<BoxIdentifier>(0x794f12b4, 0x201204b7)</BoxIdentifier>
+				<BoxIdentifier>(0x3e4b3ab7, 0x4abee776)</BoxIdentifier>
 				<BoxOutputIndex>1</BoxOutputIndex>
 			</Source>
 			<Target>
-				<BoxIdentifier>(0x1c5d95d2, 0x404cba8b)</BoxIdentifier>
+				<BoxIdentifier>(0x34e14bdb, 0x5f2f43ab)</BoxIdentifier>
 				<BoxInputIndex>0</BoxInputIndex>
 			</Target>
 			<Attributes>
@@ -202,7 +206,7 @@
 	<MessageLinks></MessageLinks>
 	<Comments>
 		<Comment>
-			<Identifier>(0x06eac614, 0x6029b82f)</Identifier>
+			<Identifier>(0x2e0edc5e, 0x49594c1d)</Identifier>
 			<Text>Very simple script to visualize data coming from Processing.</Text>
 			<Attributes>
 				<Attribute>
@@ -216,7 +220,7 @@
 			</Attributes>
 		</Comment>
 		<Comment>
-			<Identifier>(0x0dcaac17, 0x106d6253)</Identifier>
+			<Identifier>(0x5335a125, 0x1e9edefb)</Identifier>
 			<Text>Apply cool signal processing HERE</Text>
 			<Attributes>
 				<Attribute>
@@ -232,7 +236,7 @@
 	</Comments>
 	<VisualisationTree>
 		<VisualisationWidget>
-			<Identifier>(0x24b689d8, 0x2291a7ec)</Identifier>
+			<Identifier>(0x1e556bd7, 0x58de9bb0)</Identifier>
 			<Name>Default window</Name>
 			<Type>1</Type>
 			<ParentIdentifier>(0xffffffff, 0xffffffff)</ParentIdentifier>
@@ -250,26 +254,26 @@
 			</Attributes>
 		</VisualisationWidget>
 		<VisualisationWidget>
-			<Identifier>(0x70e345f2, 0x3c221864)</Identifier>
+			<Identifier>(0x5ee1074d, 0x266c8ae0)</Identifier>
 			<Type>3</Type>
 			<ParentIdentifier>(0xffffffff, 0xffffffff)</ParentIdentifier>
-			<BoxIdentifier>(0x1c5d95d2, 0x404cba8b)</BoxIdentifier>
+			<BoxIdentifier>(0x34e14bdb, 0x5f2f43ab)</BoxIdentifier>
 			<NumChildren>0</NumChildren>
 		</VisualisationWidget>
 		<VisualisationWidget>
-			<Identifier>(0x7b3d2f3c, 0x27b6e110)</Identifier>
+			<Identifier>(0x3ba05e3d, 0x01ec8741)</Identifier>
 			<Name>Default tab</Name>
 			<Type>2</Type>
-			<ParentIdentifier>(0x24b689d8, 0x2291a7ec)</ParentIdentifier>
+			<ParentIdentifier>(0x1e556bd7, 0x58de9bb0)</ParentIdentifier>
 			<Index>0</Index>
 			<BoxIdentifier>(0xffffffff, 0xffffffff)</BoxIdentifier>
 			<NumChildren>1</NumChildren>
 		</VisualisationWidget>
 		<VisualisationWidget>
-			<Identifier>(0x00229108, 0x5239c87f)</Identifier>
+			<Identifier>(0x3357874d, 0x4a19162e)</Identifier>
 			<Name>Empty</Name>
 			<Type>0</Type>
-			<ParentIdentifier>(0x7b3d2f3c, 0x27b6e110)</ParentIdentifier>
+			<ParentIdentifier>(0x3ba05e3d, 0x01ec8741)</ParentIdentifier>
 			<Index>0</Index>
 			<BoxIdentifier>(0xffffffff, 0xffffffff)</BoxIdentifier>
 			<NumChildren>0</NumChildren>
