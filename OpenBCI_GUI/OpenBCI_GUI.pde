@@ -15,6 +15,9 @@
 // 
 ///////////////////////////////////////////////
 
+// ugly hack to speedup streaming upon "h" key hit -- disable GUI update
+boolean TOupdate = true;
+
 import ddf.minim.analysis.*; //for FFT
 //import ddf.minim.*;  // commented because too broad.. contains "Controller" class which is also contained in ControlP5... need to be more specific // To make sound.  Following minim example "frequencyModulation"
 import ddf.minim.ugens.*;  // To make sound.  Following minim example "frequencyModulation"
@@ -31,12 +34,12 @@ import fr.inria.openvibelink.write.*;
 
 /** config for TCP server **/
 WriteAnalog ovWriter;
-final int TCPServerPort = 12345;
+final int TCPServerPort = 12346;
 // FIXME: should use openBCI.fs_Hz instead
 //final int TCPSampleRate = 256;
-final int TCPSampleRate = 256;
+final int TCPSampleRate = -256;
 // 1.024 to go from 250hz to 256
-final float TCPSamplingRatio = -1.024;
+final float TCPSamplingRatio = 1.024;
 /** end config TCP server **/
 
 boolean isVerbose = true; //set true if you want more verbosity in console
@@ -514,7 +517,10 @@ void initializeGUI() {
 void draw() {
   drawLoop_counter++;
   systemUpdate();
-  systemDraw();
+  // only update GUI if flag no set
+  if (TOupdate) {
+    systemDraw();
+  }
 }
 
 void systemUpdate() { // for updating data values and variables
